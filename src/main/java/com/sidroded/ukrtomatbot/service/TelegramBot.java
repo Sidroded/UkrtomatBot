@@ -84,6 +84,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     static private final String MIXED_OIL_BUTTON = "MIXED_OIL_BUTTON";
     static private final String OLIVE_OIL_BUTTON = "OLIVE_OIL_BUTTON";
     static private final String REFINED_OIL_BUTTON = "REFINED_OIL_BUTTON";
+    static private final String CLEAR_BASKET = "CLEAR_BASKET";
+    static private final String CREATE_AN_ORDER = "CREATE_AN_ORDER";
 
     /*------------------------------INFO------------------------------*/
     static private final String ERROR = EmojiParser.parseToUnicode("Сталася помилка " + ":shrug:");
@@ -126,7 +128,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 int count = Integer.parseInt(messageText);
                 basketMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add(productsMap.get(chatId) +
                         " x" + count + "шт - " + priceMap.get(productsMap.get(chatId)) * count + "грн.");
-                sumMap.put(chatId, priceMap.get(productsMap.get(chatId)) * count);
+
+                sumMap.put(chatId, sumMap.get(chatId) + priceMap.get(productsMap.get(chatId)) * count);
                 sendMassage(chatId, "Додано!");
             }
 
@@ -204,6 +207,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case REFINED_OIL_BUTTON:
                     setTomatoesCountRefinedOil(chatId);
                     break;
+                case CLEAR_BASKET:
+                    sumMap.put(chatId, 0);
+                    basketMap.put(chatId, new ArrayList<>());
+                    basketCommandReceived(chatId);
+                    break;
             }
         }
     }
@@ -213,6 +221,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     public void startCommandReceived(long chatId, String name) {
         String startMessage = name + ", доброго дня! Вітаємо вас у нашому магазині крафтових смаколиків.";
         createAllPrices();
+        sumMap.put(chatId, 0);
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -288,7 +297,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         String basketMessage;
         String basketTitle = "Ваше замовлення:";
 
-        if (!basketMap.containsKey(chatId)) {
+        if ((!basketMap.containsKey(chatId)) || basketMap.get(chatId).isEmpty()) {
             basketMessage = "Ваш кошик порожній";
         } else {
             StringBuilder basketBuilder = new StringBuilder();
@@ -303,8 +312,40 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             basketMessage = basketBuilder.toString();
         }
-        sendMassage(chatId, basketMessage);
-    } //soon
+
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(basketMessage);
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> rowInLine = new ArrayList<>();
+
+        var clearBasketButton = new InlineKeyboardButton();
+        clearBasketButton.setText("Очистити");
+        clearBasketButton.setCallbackData(CLEAR_BASKET);
+
+        rowInLine.add(clearBasketButton);
+        rowsInLine.add(rowInLine);
+
+        rowInLine = new ArrayList<>();
+
+        var createAnOrderButton = new InlineKeyboardButton();
+        createAnOrderButton.setText("Сформувати рахунок");
+        createAnOrderButton.setCallbackData(CREATE_AN_ORDER);
+
+        rowInLine.add(createAnOrderButton);
+        rowsInLine.add(rowInLine);
+
+        inlineKeyboardMarkup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(inlineKeyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException ignored) {}
+
+
+    }
 
     public void tomatoesCommandReceived(long chatId) {
         String shopMassage = "Маємо 5 неперевершених смаків!";
