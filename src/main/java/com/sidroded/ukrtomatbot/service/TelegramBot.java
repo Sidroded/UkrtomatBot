@@ -60,13 +60,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     static private final String TOMATOES_CLASSIC_DESCRIPTION_MIXED_OIL = "TOMATOES_CLASSIC_MIXED_OIL";
     static private final String TOMATOES_PIQUANT_DESCRIPTION_MIXED_OIL = "TOMATOES_PIQUANT_MIXED_OIL";
     static private final String TOMATOES_SPICY_DESCRIPTION_MIXED_OIL = "TOMATOES_SPICY_MIXED_OIL";
-    static private final String TOMATOES_ORIGINAL_DESCRIPTION_MIXED_OIL = "TOMATOES_ORIGINAL_MIXED_OIL";
-    static private final String TOMATOES_EXTRA_DESCRIPTION_MIXED_OIL = "TOMATOES_EXTRA_MIXED_OIL";
 
     static private final String TOMATOES_CLASSIC_DESCRIPTION_OLIVE_OIL = "TOMATOES_CLASSIC_OLIVE_OIL";
     static private final String TOMATOES_PIQUANT_DESCRIPTION_OLIVE_OIL = "TOMATOES_PIQUANT_OLIVE_OIL";
     static private final String TOMATOES_SPICY_DESCRIPTION_OLIVE_OIL = "TOMATOES_SPICY_OLIVE_OIL";
-    static private final String TOMATOES_ORIGINAL_DESCRIPTION_OLIVE_OIL = "TOMATOES_ORIGINAL_OLIVE_OIL";
     static private final String TOMATOES_EXTRA_DESCRIPTION_OLIVE_OIL = "TOMATOES_EXTRA_OLIVE_OIL";
 
     /*---------------------------INLINE BUTTONS-----------------------*/
@@ -79,12 +76,18 @@ public class TelegramBot extends TelegramLongPollingBot {
     static private final String ERROR = EmojiParser.parseToUnicode("Сталася помилка " + ":shrug:");
     static private final String IN_DEVELOP = EmojiParser.parseToUnicode("Ця частина боту знаходиться в розробці " + ":shrug:");
 
+    /*----------------------------HASH MAPS---------------------------*/
+
     private HashMap<Long, String> returnMap = new HashMap<>();
     private HashMap<Long, String> productsMap = new HashMap<>();
     private HashMap<Long, ArrayList<String>> basketMap = new HashMap<>();
-    private BotConfig config;
+    private HashMap<Long, Integer> sumMap = new HashMap<>();
+    private HashMap<String, Integer> priceMap = new HashMap<>();
+
 
     /*----------------------------CONFIG------------------------------*/
+
+    private BotConfig config;
     public TelegramBot(BotConfig botConfig) {
         this.config = botConfig;
     }
@@ -266,8 +269,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         sendMassage(chatId, basketMessage);
     } //soon
-
-
+    
     public void tomatoesCommandReceived(long chatId) {
         String shopMassage = "Маємо 5 неперевершених смаків!";
         returnMap.put(chatId, TOMATOES_POSITION);
@@ -405,12 +407,15 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         switch (productsMap.get(chatId)) {
             case TOMATOES_CLASSIC_PRODUCT :
+                productsMap.put(chatId, TOMATOES_CLASSIC_PRODUCT_MIXED_OIL);
                 description = TOMATOES_CLASSIC_DESCRIPTION_MIXED_OIL;
                 break;
             case TOMATOES_PIQUANT_PRODUCT:
+                productsMap.put(chatId, TOMATOES_PIQUANT_PRODUCT_MIXED_OIL);
                 description = TOMATOES_PIQUANT_DESCRIPTION_MIXED_OIL;
                 break;
             case TOMATOES_SPICY_PRODUCT:
+                productsMap.put(chatId, TOMATOES_SPICY_PRODUCT_MIXED_OIL);
                 description = TOMATOES_SPICY_DESCRIPTION_MIXED_OIL;
                 break;
         }
@@ -461,12 +466,18 @@ public class TelegramBot extends TelegramLongPollingBot {
         switch (productsMap.get(chatId)) {
             case TOMATOES_CLASSIC_PRODUCT :
                 description = TOMATOES_CLASSIC_DESCRIPTION_OLIVE_OIL;
+                productsMap.put(chatId, TOMATOES_CLASSIC_PRODUCT_OLIVE_OIL);
                 break;
             case TOMATOES_PIQUANT_PRODUCT:
                 description = TOMATOES_PIQUANT_DESCRIPTION_OLIVE_OIL;
+                productsMap.put(chatId, TOMATOES_PIQUANT_PRODUCT_OLIVE_OIL);
                 break;
             case TOMATOES_SPICY_PRODUCT:
                 description = TOMATOES_SPICY_DESCRIPTION_OLIVE_OIL;
+                productsMap.put(chatId, TOMATOES_SPICY_PRODUCT_OLIVE_OIL);
+                break;
+            case TOMATOES_EXTRA_PRODUCT:
+                productsMap.put(chatId, TOMATOES_EXTRA_PRODUCT_OLIVE_OIL);
                 break;
         }
 
@@ -511,6 +522,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     public void setTomatoesCountRefinedOil(long chatId) {
         String countMessage = "Скільки баночок бажаєте?";
+
+        productsMap.put(chatId, TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL);
+
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(countMessage);
