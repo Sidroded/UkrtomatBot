@@ -49,6 +49,19 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     static private final String TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL = "TOMATOES_ORIGINAL_MIXED_OIL";
 
+    /*---------------------------PRODUCT PRICE-------------------------*/
+
+    static private final int TOMATOES_SPICY_PRODUCT_MIXED_OIL_PRICE = 150;
+    static private final int TOMATOES_CLASSIC_PRODUCT_MIXED_OIL_PRICE = 150;
+    static private final int TOMATOES_PIQUANT_PRODUCT_MIXED_OIL_PRICE = 150;
+
+    static private final int TOMATOES_CLASSIC_PRODUCT_OLIVE_OIL_PRICE = 200;
+    static private final int TOMATOES_PIQUANT_PRODUCT_OLIVE_OIL_PRICE = 200;
+    static private final int TOMATOES_SPICY_PRODUCT_OLIVE_OIL_PRICE = 20;
+    static private final int TOMATOES_EXTRA_PRODUCT_OLIVE_OIL_PRICE = 150;
+
+    static private final int TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL_PRICE = 150;
+
     /*------------------------PRODUCT DESCRIPTION----------------------*/
 
     static private final String TOMATOES_CLASSIC_DESCRIPTION = "TOMATOES_CLASSIC";
@@ -57,14 +70,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     static private final String TOMATOES_ORIGINAL_DESCRIPTION = "TOMATOES_ORIGINAL";
     static private final String TOMATOES_EXTRA_DESCRIPTION = "TOMATOES_EXTRA";
 
-    static private final String TOMATOES_CLASSIC_DESCRIPTION_MIXED_OIL = "TOMATOES_CLASSIC_MIXED_OIL";
-    static private final String TOMATOES_PIQUANT_DESCRIPTION_MIXED_OIL = "TOMATOES_PIQUANT_MIXED_OIL";
-    static private final String TOMATOES_SPICY_DESCRIPTION_MIXED_OIL = "TOMATOES_SPICY_MIXED_OIL";
+    static private final String TOMATOES_CLASSIC_DESCRIPTION_MIXED_OIL = "TOMATOES_CLASSIC_MIXED_OIL_DESCRIPTION";
+    static private final String TOMATOES_PIQUANT_DESCRIPTION_MIXED_OIL = "TOMATOES_PIQUANT_MIXED_OIL_DESCRIPTION";
+    static private final String TOMATOES_SPICY_DESCRIPTION_MIXED_OIL = "TOMATOES_SPICY_MIXED_OIL_DESCRIPTION";
 
-    static private final String TOMATOES_CLASSIC_DESCRIPTION_OLIVE_OIL = "TOMATOES_CLASSIC_OLIVE_OIL";
-    static private final String TOMATOES_PIQUANT_DESCRIPTION_OLIVE_OIL = "TOMATOES_PIQUANT_OLIVE_OIL";
-    static private final String TOMATOES_SPICY_DESCRIPTION_OLIVE_OIL = "TOMATOES_SPICY_OLIVE_OIL";
-    static private final String TOMATOES_EXTRA_DESCRIPTION_OLIVE_OIL = "TOMATOES_EXTRA_OLIVE_OIL";
+    static private final String TOMATOES_CLASSIC_DESCRIPTION_OLIVE_OIL = "TOMATOES_CLASSIC_OLIVE_OIL_DESCRIPTION";
+    static private final String TOMATOES_PIQUANT_DESCRIPTION_OLIVE_OIL = "TOMATOES_PIQUANT_OLIVE_OIL_DESCRIPTION";
+    static private final String TOMATOES_SPICY_DESCRIPTION_OLIVE_OIL = "TOMATOES_SPICY_OLIVE_OIL_DESCRIPTION";
+    static private final String TOMATOES_EXTRA_DESCRIPTION_OLIVE_OIL = "TOMATOES_EXTRA_OLIVE_OIL_DESCRIPTION";
 
     /*---------------------------INLINE BUTTONS-----------------------*/
 
@@ -105,10 +118,19 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
-            String massageText = update.getMessage().getText();
+            String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
+            String regex = "\\d+";
 
-            switch (massageText) {
+            if (messageText.matches(regex)) {
+                int count = Integer.parseInt(messageText);
+                basketMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add(productsMap.get(chatId) +
+                        " x" + count + "шт - " + priceMap.get(productsMap.get(chatId)) * count + "грн.");
+                sumMap.put(chatId, priceMap.get(productsMap.get(chatId)) * count);
+                sendMassage(chatId, "Додано!");
+            }
+
+            switch (messageText) {
                 case "/start":
                     startCommandReceived(chatId, update.getMessage().getChat().getFirstName());
                     break;
@@ -190,6 +212,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     public void startCommandReceived(long chatId, String name) {
         String startMessage = name + ", доброго дня! Вітаємо вас у нашому магазині крафтових смаколиків.";
+        createAllPrices();
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -262,14 +285,27 @@ public class TelegramBot extends TelegramLongPollingBot {
     } //soon
 
     public void basketCommandReceived(long chatId) {
-        String basketMessage = "ТЕСТ";
-        if (!basketMap.containsKey(chatId)) {
-            basketMessage = "Ваш кошик порожний";
-        }
+        String basketMessage;
+        String basketTitle = "Ваше замовлення:";
 
+        if (!basketMap.containsKey(chatId)) {
+            basketMessage = "Ваш кошик порожній";
+        } else {
+            StringBuilder basketBuilder = new StringBuilder();
+
+            basketBuilder.append(basketTitle + "\n\n");
+
+            for (String str : basketMap.get(chatId)) {
+                basketBuilder.append(str + "\n\n");
+            }
+
+            basketBuilder.append("Разом до сплати:" + sumMap.get(chatId) + "грн.");
+
+            basketMessage = basketBuilder.toString();
+        }
         sendMassage(chatId, basketMessage);
     } //soon
-    
+
     public void tomatoesCommandReceived(long chatId) {
         String shopMassage = "Маємо 5 неперевершених смаків!";
         returnMap.put(chatId, TOMATOES_POSITION);
@@ -336,6 +372,21 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
 
         sendMassage(OWNER_ID, order.toString());
+    }
+
+    public void createAllPrices() {
+        priceMap.put(TOMATOES_CLASSIC_PRODUCT_MIXED_OIL, TOMATOES_CLASSIC_PRODUCT_MIXED_OIL_PRICE);
+        priceMap.put(TOMATOES_CLASSIC_PRODUCT_OLIVE_OIL, TOMATOES_CLASSIC_PRODUCT_OLIVE_OIL_PRICE);
+
+        priceMap.put(TOMATOES_PIQUANT_PRODUCT_MIXED_OIL, TOMATOES_PIQUANT_PRODUCT_MIXED_OIL_PRICE);
+        priceMap.put(TOMATOES_PIQUANT_PRODUCT_OLIVE_OIL, TOMATOES_PIQUANT_PRODUCT_OLIVE_OIL_PRICE);
+
+        priceMap.put(TOMATOES_SPICY_PRODUCT_MIXED_OIL, TOMATOES_SPICY_PRODUCT_MIXED_OIL_PRICE);
+        priceMap.put(TOMATOES_SPICY_PRODUCT_OLIVE_OIL, TOMATOES_SPICY_PRODUCT_OLIVE_OIL_PRICE);
+
+        priceMap.put(TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL, TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL_PRICE);
+
+        priceMap.put(TOMATOES_EXTRA_PRODUCT_OLIVE_OIL, TOMATOES_EXTRA_PRODUCT_OLIVE_OIL_PRICE);
     }
 
     /*-------------------------------PRODUCTS----------------------------------*/
