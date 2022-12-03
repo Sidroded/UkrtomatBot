@@ -24,11 +24,13 @@ import java.util.List;
 public class TelegramBot extends TelegramLongPollingBot {
 
     static private final long OWNER_ID = 5061545325L;
+    static private int orderNum = 30_000;
 
     /*----------------------------POSITION------------------------------*/
     static private final String SHOP_POSITION = "SHOP";
     static private final String TOMATOES_POSITION = "TOMATOES";
     static private final String TOMATOES_CHOICE_POSITION = "TOMATOES_CHOICE";
+    static private final String CREATE_AN_ORDER_POSITION = "CREATE_AN_ORDER_POSITION";
 
     /*-----------------------------PRODUCTS----------------------------*/
 
@@ -84,8 +86,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     static private final String MIXED_OIL_BUTTON = "MIXED_OIL_BUTTON";
     static private final String OLIVE_OIL_BUTTON = "OLIVE_OIL_BUTTON";
     static private final String REFINED_OIL_BUTTON = "REFINED_OIL_BUTTON";
-    static private final String CLEAR_BASKET = "CLEAR_BASKET";
-    static private final String CREATE_AN_ORDER = "CREATE_AN_ORDER";
+    static private final String CLEAR_BASKET_BUTTON = "CLEAR_BASKET";
+    static private final String CREATE_AN_ORDER_BUTTON = "CREATE_AN_ORDER";
+    static private final String CONFIRM_GUEST_INFO_BUTTON = "CONFIRM_GUEST_INFO_BUTTON";
+    static private final String CHANGE_GUEST_INFO_BUTTON = "CHANGE_GUEST_INFO_BUTTON";
 
     /*------------------------------INFO------------------------------*/
     static private final String ERROR = EmojiParser.parseToUnicode("Сталася помилка " + ":shrug:");
@@ -98,7 +102,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private HashMap<Long, ArrayList<String>> basketMap = new HashMap<>();
     private HashMap<Long, Integer> sumMap = new HashMap<>();
     private HashMap<String, Integer> priceMap = new HashMap<>();
-
+    private HashMap<Long, ArrayList<String>> guestInfoMap = new HashMap<>();
 
     /*----------------------------CONFIG------------------------------*/
 
@@ -125,12 +129,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             String regex = "\\d+";
 
             if (messageText.matches(regex)) {
-                int count = Integer.parseInt(messageText);
-                basketMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add(productsMap.get(chatId) +
-                        " x" + count + "шт - " + priceMap.get(productsMap.get(chatId)) * count + "грн.");
+                long count = Integer.parseInt(messageText);
+                if (count < 100) {
+                    basketMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add(productsMap.get(chatId) +
+                            " x" + count + "шт - " + priceMap.get(productsMap.get(chatId)) * count + "грн.");
 
-                sumMap.put(chatId, sumMap.get(chatId) + priceMap.get(productsMap.get(chatId)) * count);
-                sendMassage(chatId, "Додано!");
+                    sumMap.put(chatId, (int) (sumMap.get(chatId) + priceMap.get(productsMap.get(chatId)) * count));
+                    choiceCommandReceived(chatId);
+                }
             }
 
             switch (messageText) {
@@ -166,6 +172,21 @@ public class TelegramBot extends TelegramLongPollingBot {
                             sendMassage(chatId, ERROR);
                     }
                     break;
+                case "Додати ще":
+                    if (!returnMap.containsKey(chatId)) returnMap.put(chatId, SHOP_POSITION);
+
+                    switch (returnMap.get(chatId)) {
+                        case TOMATOES_CHOICE_POSITION:
+                            tomatoesCommandReceived(chatId);
+                            break;
+                        default:
+                            sendMassage(chatId, ERROR);
+                    }
+                    break;
+                case "Чек":
+                    basketCommandReceived(chatId);
+                    receiptCommandReceived(chatId);
+                    break;
                 case "В'ялені томати":
                     tomatoesCommandReceived(chatId);
                     break;
@@ -189,9 +210,26 @@ public class TelegramBot extends TelegramLongPollingBot {
                     productsMap.put(chatId, TOMATOES_EXTRA_PRODUCT);
                     setTomatoesProduct(chatId);
                     break;
-                default:
-                    sendMassage(chatId, EmojiParser.parseToUnicode("Невідома команда " + ":shrug:"));
+                case "Сформувати рахунок":
+                    createAnOrderCommandReceived(chatId);
+                    break;
             }
+
+
+            if (returnMap.get(chatId).equals(CREATE_AN_ORDER_POSITION)) {
+                if (guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).size() == 2) {
+                    guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add(messageText);
+                    sendMassage(chatId, "Введіть номер телефону отримувача починаючи з (+380).");
+                } else if (guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).size() == 3) {
+                    sendMassage(chatId, "Введіть місто та номер відділення Нової Пошти.");
+                    guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add(messageText);
+                } else if (guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).size() == 4) {
+                    guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add(messageText);
+                    checkGuestInfoCommandReceived(chatId);
+                    returnMap.put(chatId, SHOP_POSITION);
+                }
+            }
+
         } else if (update.hasCallbackQuery()) {
             String callbackData = update.getCallbackQuery().getData();
             int massageId = update.getCallbackQuery().getMessage().getMessageId();
@@ -207,10 +245,22 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case REFINED_OIL_BUTTON:
                     setTomatoesCountRefinedOil(chatId);
                     break;
-                case CLEAR_BASKET:
+                case CLEAR_BASKET_BUTTON:
                     sumMap.put(chatId, 0);
                     basketMap.put(chatId, new ArrayList<>());
-                    basketCommandReceived(chatId);
+                    updateClearBasket(chatId, massageId);
+                    break;
+                case CREATE_AN_ORDER_BUTTON:
+                    createAnOrderCommandReceived(chatId);
+                    break;
+                case CHANGE_GUEST_INFO_BUTTON:
+                    guestInfoMap.put(chatId, new ArrayList<>());
+                    guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add("Будь-ласка перевірте введені данні:");
+                    guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add("");
+                    createAnOrderCommandReceived(chatId);
+                    break;
+                case CONFIRM_GUEST_INFO_BUTTON:
+                    sendOrderToOwner(chatId);
                     break;
             }
         }
@@ -219,9 +269,13 @@ public class TelegramBot extends TelegramLongPollingBot {
     /*---------------------RECEIVED COMMANDS--------------------*/
 
     public void startCommandReceived(long chatId, String name) {
-        String startMessage = name + ", доброго дня! Вітаємо вас у нашому магазині крафтових смаколиків.";
         createAllPrices();
         sumMap.put(chatId, 0);
+        guestInfoMap.put(chatId, new ArrayList<>());
+        guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add("Будь-ласка перевірте введені данні:");
+        guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).add("");
+
+        String startMessage = name + ", доброго дня! Вітаємо вас у нашому магазині крафтових смаколиків.";
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -237,7 +291,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboardRows.add(row);
         row = new KeyboardRow();
         row.add("Кошик");
-        row.add("Сформувати рахунок");
         keyboardRows.add(row);
         keyboardMarkup.setKeyboard(keyboardRows);
         message.setReplyMarkup(keyboardMarkup);
@@ -291,14 +344,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         String contactText = "";
 
         sendMassage(chatId, IN_DEVELOP);
-    } //soon
+    }        //soon
 
     public void basketCommandReceived(long chatId) {
         String basketMessage;
         String basketTitle = "Ваше замовлення:";
 
         if ((!basketMap.containsKey(chatId)) || basketMap.get(chatId).isEmpty()) {
-            basketMessage = "Ваш кошик порожній";
+            basketMessage = "Ваш кошик порожній. \n\n" +
+                    "Разом до сплати: " + sumMap.get(chatId) + "грн.";
         } else {
             StringBuilder basketBuilder = new StringBuilder();
 
@@ -308,7 +362,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 basketBuilder.append(str + "\n\n");
             }
 
-            basketBuilder.append("Разом до сплати:" + sumMap.get(chatId) + "грн.");
+            basketBuilder.append("Разом до сплати: " + sumMap.get(chatId) + "грн.");
 
             basketMessage = basketBuilder.toString();
         }
@@ -323,7 +377,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         var clearBasketButton = new InlineKeyboardButton();
         clearBasketButton.setText("Очистити");
-        clearBasketButton.setCallbackData(CLEAR_BASKET);
+        clearBasketButton.setCallbackData(CLEAR_BASKET_BUTTON);
 
         rowInLine.add(clearBasketButton);
         rowsInLine.add(rowInLine);
@@ -332,7 +386,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         var createAnOrderButton = new InlineKeyboardButton();
         createAnOrderButton.setText("Сформувати рахунок");
-        createAnOrderButton.setCallbackData(CREATE_AN_ORDER);
+        createAnOrderButton.setCallbackData(CREATE_AN_ORDER_BUTTON);
 
         rowInLine.add(createAnOrderButton);
         rowsInLine.add(rowInLine);
@@ -381,6 +435,112 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    public void choiceCommandReceived(long chatId) {
+        String added = "Додано!";
+
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(added);
+
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+        KeyboardRow row = new KeyboardRow();
+        row.add("Додати ще");
+        row.add("Чек");
+        keyboardRows.add(row);
+        row = new KeyboardRow();
+        row.add("Повернутись");
+        keyboardRows.add(row);
+        keyboardMarkup.setKeyboard(keyboardRows);
+        message.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred" + e.getMessage());
+        }
+
+    }
+
+    public void receiptCommandReceived(long chatId) {
+        String added = "Можете додати ще, або сформвати рахунок!";
+
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(added);
+
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+        KeyboardRow row = new KeyboardRow();
+        row.add("Додати ще");
+        row.add("Сформувати рахунок");
+        keyboardRows.add(row);
+        row = new KeyboardRow();
+        row.add("Повернутись");
+        keyboardRows.add(row);
+        keyboardMarkup.setKeyboard(keyboardRows);
+        message.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred" + e.getMessage());
+        }
+    }
+
+    public void createAnOrderCommandReceived(long chatId) {
+        returnMap.put(chatId, CREATE_AN_ORDER_POSITION);
+        String str1 = "Заповніть данні Нової Пошти.";
+        String str2 = "Вкажіть ваші Прізвище та Ім'я.";
+
+        sendMassage(chatId, str1);
+        sendMassage(chatId, str2);
+    }
+
+    public void checkGuestInfoCommandReceived(long chatId) {
+        StringBuilder builder = new StringBuilder();
+        for (String str : guestInfoMap.get(chatId)) {
+            builder.append(str + "\n");
+        }
+
+        SendMessage message = new SendMessage();
+        message.setText(builder.toString());
+        message.setChatId(String.valueOf(chatId));
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> rowInLine = new ArrayList<>();
+
+        var clearBasketButton = new InlineKeyboardButton();
+        clearBasketButton.setText("Підтвердити");
+        clearBasketButton.setCallbackData(CONFIRM_GUEST_INFO_BUTTON);
+
+        rowInLine.add(clearBasketButton);
+        rowsInLine.add(rowInLine);
+
+        rowInLine = new ArrayList<>();
+
+        var createAnOrderButton = new InlineKeyboardButton();
+        createAnOrderButton.setText("Змінити");
+        createAnOrderButton.setCallbackData(CHANGE_GUEST_INFO_BUTTON);
+
+        rowInLine.add(createAnOrderButton);
+        rowsInLine.add(rowInLine);
+
+        inlineKeyboardMarkup.setKeyboard(rowsInLine);
+        message.setReplyMarkup(inlineKeyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred" + e.getMessage());
+        }
+
+        returnMap.put(chatId, SHOP_POSITION);
+    }
+    
 
     /*----------------------------MANAGER COMMAND----------------------------*/
 
@@ -393,9 +553,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException ignored) {}
     }
 
-    public void createAnOrderCommandReceived(long chatId, ArrayList<String> orderArray) {
-
-    } //test code
 
     public void getOwnerId(long chatId) {
         String path = "d:/Test/getId.txt";
@@ -405,11 +562,16 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (Exception ignored) {}
     }
 
-    public void sendOrderToOwner(ArrayList<String> orderArray) {
+    public void sendOrderToOwner(long chatId) {
         StringBuilder order = new StringBuilder();
 
-        for (String str : orderArray) {
-            order.append(str);
+
+        for (String str : basketMap.get(chatId)) {
+            order.append(str + "\n\n");
+        }
+
+        for (String str : guestInfoMap.get(chatId)) {
+            order.append(str + "\n");
         }
 
         sendMassage(OWNER_ID, order.toString());
@@ -428,6 +590,45 @@ public class TelegramBot extends TelegramLongPollingBot {
         priceMap.put(TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL, TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL_PRICE);
 
         priceMap.put(TOMATOES_EXTRA_PRODUCT_OLIVE_OIL, TOMATOES_EXTRA_PRODUCT_OLIVE_OIL_PRICE);
+    }
+
+    public void updateClearBasket(long chatId, int messageId) {
+        String description = "Ваш кошик порожній. \n\n" +
+                "Разом до сплати: " + sumMap.get(chatId) + "грн.";
+
+        EditMessageText editMessageText = new EditMessageText();
+        editMessageText.setChatId(String.valueOf(chatId));
+        editMessageText.setText(description);
+        editMessageText.setMessageId(messageId);
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsInLine = new ArrayList<>();
+        List<InlineKeyboardButton> rowInLine = new ArrayList<>();
+
+        var clearBasketButton = new InlineKeyboardButton();
+        clearBasketButton.setText("Очистити");
+        clearBasketButton.setCallbackData(CLEAR_BASKET_BUTTON);
+
+        rowInLine.add(clearBasketButton);
+        rowsInLine.add(rowInLine);
+
+        rowInLine = new ArrayList<>();
+
+        var createAnOrderButton = new InlineKeyboardButton();
+        createAnOrderButton.setText("Сформувати рахунок");
+        createAnOrderButton.setCallbackData(CREATE_AN_ORDER_BUTTON);
+
+        rowInLine.add(createAnOrderButton);
+        rowsInLine.add(rowInLine);
+
+        inlineKeyboardMarkup.setKeyboard(rowsInLine);
+        editMessageText.setReplyMarkup(inlineKeyboardMarkup);
+
+        try {
+            execute(editMessageText);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred" + e.getMessage());
+        }
     }
 
     /*-------------------------------PRODUCTS----------------------------------*/
