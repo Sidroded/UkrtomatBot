@@ -6,7 +6,9 @@ import org.springframework.stereotype.Component;
 import com.vdurmont.emoji.EmojiParser;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
@@ -40,16 +42,16 @@ public class TelegramBot extends TelegramLongPollingBot {
     static private final String TOMATOES_ORIGINAL_PRODUCT = "TOMATOES_ORIGINAL";
     static private final String TOMATOES_EXTRA_PRODUCT = "TOMATOES_EXTRA";
 
-    static private final String TOMATOES_CLASSIC_PRODUCT_MIXED_OIL = "TOMATOES_CLASSIC_MIXED_OIL";
-    static private final String TOMATOES_PIQUANT_PRODUCT_MIXED_OIL = "TOMATOES_PIQUANT_MIXED_OIL";
-    static private final String TOMATOES_SPICY_PRODUCT_MIXED_OIL = "TOMATOES_SPICY_MIXED_OIL";
+    static private final String TOMATOES_CLASSIC_PRODUCT_MIXED_OIL = Products.TOMATOES_CLASSIC_PRODUCT_MIXED_OIL;
+    static private final String TOMATOES_PIQUANT_PRODUCT_MIXED_OIL = Products.TOMATOES_PIQUANT_PRODUCT_MIXED_OIL;
+    static private final String TOMATOES_SPICY_PRODUCT_MIXED_OIL = Products.TOMATOES_SPICY_PRODUCT_MIXED_OIL;
 
-    static private final String TOMATOES_CLASSIC_PRODUCT_OLIVE_OIL = "TOMATOES_CLASSIC_OLIVE_OIL";
-    static private final String TOMATOES_PIQUANT_PRODUCT_OLIVE_OIL = "TOMATOES_PIQUANT_OLIVE_OIL";
-    static private final String TOMATOES_SPICY_PRODUCT_OLIVE_OIL = "TOMATOES_SPICY_OLIVE_OIL";
-    static private final String TOMATOES_EXTRA_PRODUCT_OLIVE_OIL = "TOMATOES_EXTRA_OLIVE_OIL";
+    static private final String TOMATOES_CLASSIC_PRODUCT_OLIVE_OIL = Products.TOMATOES_CLASSIC_PRODUCT_OLIVE_OIL;
+    static private final String TOMATOES_PIQUANT_PRODUCT_OLIVE_OIL = Products.TOMATOES_PIQUANT_PRODUCT_OLIVE_OIL;
+    static private final String TOMATOES_SPICY_PRODUCT_OLIVE_OIL = Products.TOMATOES_SPICY_PRODUCT_OLIVE_OIL;
+    static private final String TOMATOES_EXTRA_PRODUCT_OLIVE_OIL = Products.TOMATOES_EXTRA_PRODUCT_OLIVE_OIL;
 
-    static private final String TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL = "TOMATOES_ORIGINAL_MIXED_OIL";
+    static private final String TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL = Products.TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL;
 
     /*---------------------------PRODUCT PRICE-------------------------*/
 
@@ -59,27 +61,26 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     static private final int TOMATOES_CLASSIC_PRODUCT_OLIVE_OIL_PRICE = 200;
     static private final int TOMATOES_PIQUANT_PRODUCT_OLIVE_OIL_PRICE = 200;
-    static private final int TOMATOES_SPICY_PRODUCT_OLIVE_OIL_PRICE = 20;
+    static private final int TOMATOES_SPICY_PRODUCT_OLIVE_OIL_PRICE = 200;
     static private final int TOMATOES_EXTRA_PRODUCT_OLIVE_OIL_PRICE = 150;
 
     static private final int TOMATOES_ORIGINAL_PRODUCT_REFINED_OIL_PRICE = 150;
 
     /*------------------------PRODUCT DESCRIPTION----------------------*/
 
-    static private final String TOMATOES_CLASSIC_DESCRIPTION = "TOMATOES_CLASSIC";
-    static private final String TOMATOES_PIQUANT_DESCRIPTION = "TOMATOES_PIQUANT";
-    static private final String TOMATOES_SPICY_DESCRIPTION = "TOMATOES_SPICY";
-    static private final String TOMATOES_ORIGINAL_DESCRIPTION = "TOMATOES_ORIGINAL";
-    static private final String TOMATOES_EXTRA_DESCRIPTION = "TOMATOES_EXTRA";
+    static private final String TOMATOES_CLASSIC_DESCRIPTION = Description.TOMATOES_CLASSIC_DESCRIPTION;
+    static private final String TOMATOES_PIQUANT_DESCRIPTION = Description.TOMATOES_PIQUANT_DESCRIPTION;
+    static private final String TOMATOES_SPICY_DESCRIPTION = Description.TOMATOES_SPICY_DESCRIPTION;
+    static private final String TOMATOES_ORIGINAL_DESCRIPTION = Description.TOMATOES_ORIGINAL_DESCRIPTION;
+    static private final String TOMATOES_EXTRA_DESCRIPTION = Description.TOMATOES_EXTRA_DESCRIPTION;
 
-    static private final String TOMATOES_CLASSIC_DESCRIPTION_MIXED_OIL = "TOMATOES_CLASSIC_MIXED_OIL_DESCRIPTION";
-    static private final String TOMATOES_PIQUANT_DESCRIPTION_MIXED_OIL = "TOMATOES_PIQUANT_MIXED_OIL_DESCRIPTION";
-    static private final String TOMATOES_SPICY_DESCRIPTION_MIXED_OIL = "TOMATOES_SPICY_MIXED_OIL_DESCRIPTION";
+    static private final String TOMATOES_CLASSIC_DESCRIPTION_MIXED_OIL = Description.TOMATOES_CLASSIC_DESCRIPTION_MIXED_OIL;
+    static private final String TOMATOES_PIQUANT_DESCRIPTION_MIXED_OIL = Description.TOMATOES_PIQUANT_DESCRIPTION_MIXED_OIL;
+    static private final String TOMATOES_SPICY_DESCRIPTION_MIXED_OIL = Description.TOMATOES_SPICY_DESCRIPTION_MIXED_OIL;
 
-    static private final String TOMATOES_CLASSIC_DESCRIPTION_OLIVE_OIL = "TOMATOES_CLASSIC_OLIVE_OIL_DESCRIPTION";
-    static private final String TOMATOES_PIQUANT_DESCRIPTION_OLIVE_OIL = "TOMATOES_PIQUANT_OLIVE_OIL_DESCRIPTION";
-    static private final String TOMATOES_SPICY_DESCRIPTION_OLIVE_OIL = "TOMATOES_SPICY_OLIVE_OIL_DESCRIPTION";
-    static private final String TOMATOES_EXTRA_DESCRIPTION_OLIVE_OIL = "TOMATOES_EXTRA_OLIVE_OIL_DESCRIPTION";
+    static private final String TOMATOES_CLASSIC_DESCRIPTION_OLIVE_OIL = Description.TOMATOES_CLASSIC_DESCRIPTION_OLIVE_OIL;
+    static private final String TOMATOES_PIQUANT_DESCRIPTION_OLIVE_OIL = Description.TOMATOES_PIQUANT_DESCRIPTION_OLIVE_OIL;
+    static private final String TOMATOES_SPICY_DESCRIPTION_OLIVE_OIL = Description.TOMATOES_SPICY_DESCRIPTION_OLIVE_OIL;
 
     /*---------------------------INLINE BUTTONS-----------------------*/
 
@@ -90,6 +91,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     static private final String CREATE_AN_ORDER_BUTTON = "CREATE_AN_ORDER";
     static private final String CONFIRM_GUEST_INFO_BUTTON = "CONFIRM_GUEST_INFO_BUTTON";
     static private final String CHANGE_GUEST_INFO_BUTTON = "CHANGE_GUEST_INFO_BUTTON";
+
+    /*-----------------------------IMG URL-----------------------------*/
+
+    static private final String TOMATOES_CLASSIC_URL = "https://ibb.co/dk0vqZS";
+    static private final String TOMATOES_PIQUANT_URL = "https://ibb.co/8b7BkPG";
+    static private final String TOMATOES_SPICY_URL = "https://ibb.co/DVxdZp2";
+    static private final String TOMATOES_ORIGINAL_URL = "https://ibb.co/B2BggLY";
+    static private final String TOMATOES_EXTRA_URL = "https://ibb.co/gwqdbqk";
 
     /*------------------------------INFO------------------------------*/
     static private final String ERROR = EmojiParser.parseToUnicode("Сталася помилка " + ":shrug:");
@@ -319,8 +328,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<KeyboardRow> keyboardRows = new ArrayList<>();
         KeyboardRow row = new KeyboardRow();
         row.add("В'ялені томати");
-        row.add("Ковбаса");
-        row.add("Паштети");
+        /*row.add("Ковбаса");
+        row.add("Паштети");*/
         keyboardRows.add(row);
         row = new KeyboardRow();
         row.add("Повернутись");
@@ -588,6 +597,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         String startMessage = name + ", доброго дня! Вітаємо вас у нашому магазині крафтових смаколиків.";
 
         basketMap.put(chatId, new ArrayList<>());
+        sumMap.put(chatId, 0);
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -625,7 +635,16 @@ public class TelegramBot extends TelegramLongPollingBot {
         } catch (TelegramApiException ignored) {}
     }
 
-
+    public void sendImageFromUrl(Long chatId, String URL) {
+        SendPhoto sendPhotoRequest = new SendPhoto();
+        sendPhotoRequest.setChatId(String.valueOf(chatId));
+        sendPhotoRequest.setPhoto(new InputFile(URL));
+        try {
+            execute(sendPhotoRequest);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
     public void getOwnerId(long chatId) {
         String path = "d:/Test/getId.txt";
 
@@ -636,11 +655,15 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     public void sendOrderToOwner(long chatId) {
         StringBuilder order = new StringBuilder();
-
+        order.append("Замолвення номер: " + orderNum + "\n\n");
 
         for (String str : basketMap.get(chatId)) {
             order.append(str + "\n\n");
         }
+
+        order.append("Cумма замовлення: " + sumMap.get(chatId) + "грн");
+
+        guestInfoMap.computeIfAbsent(chatId, k -> new ArrayList<>()).remove(0);
 
         for (String str : guestInfoMap.get(chatId)) {
             order.append(str + "\n");
@@ -709,23 +732,31 @@ public class TelegramBot extends TelegramLongPollingBot {
         returnMap.put(chatId, TOMATOES_CHOICE_POSITION);
 
         String description = "Описание без масла";
+        String url = "";
 
         switch (productsMap.get(chatId)) {
             case TOMATOES_CLASSIC_PRODUCT:
                 description = TOMATOES_CLASSIC_DESCRIPTION;
+                url = TOMATOES_CLASSIC_URL;
                 break;
             case TOMATOES_PIQUANT_PRODUCT:
                 description = TOMATOES_PIQUANT_DESCRIPTION;
+                url = TOMATOES_PIQUANT_URL;
                 break;
             case TOMATOES_ORIGINAL_PRODUCT:
                 description = TOMATOES_ORIGINAL_DESCRIPTION;
+                url = TOMATOES_ORIGINAL_URL;
                 break;
             case TOMATOES_SPICY_PRODUCT:
                 description = TOMATOES_SPICY_DESCRIPTION;
+                url = TOMATOES_SPICY_URL;
                 break;
             case TOMATOES_EXTRA_PRODUCT:
+                url = TOMATOES_EXTRA_URL;
                 description = TOMATOES_EXTRA_DESCRIPTION;
         }
+
+        sendImageFromUrl(chatId, url);
 
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
