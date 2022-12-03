@@ -213,6 +213,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "Сформувати рахунок":
                     createAnOrderCommandReceived(chatId);
                     break;
+                case "На початок":
+                    beginCommandReceived(chatId, update.getMessage().getChat().getFirstName());
+                    break;
             }
 
 
@@ -260,6 +263,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     createAnOrderCommandReceived(chatId);
                     break;
                 case CONFIRM_GUEST_INFO_BUTTON:
+                    finishOrderCommandReceived(chatId);
                     sendOrderToOwner(chatId);
                     break;
             }
@@ -540,7 +544,75 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         returnMap.put(chatId, SHOP_POSITION);
     }
-    
+
+    public void finishOrderCommandReceived(long chatId) {
+        orderNum++;
+
+        String str1 = "Картка для оплати замовлення (Бігленко Андрій)";
+        String str2 = "5168 7422 3406 4297";
+        String str3 = "Дякуємо що обрали нас!";
+        StringBuilder builder = new StringBuilder();
+        builder.append("Ваше замовлення номер: " + orderNum + "\n\n");
+
+        for (String str : basketMap.get(chatId)) {
+            builder.append(str + "\n\n");
+        }
+
+        builder.append("До сплати: " + sumMap.get(chatId) + "грн");
+
+        sendMassage(chatId, builder.toString());
+        sendMassage(chatId, str1);
+        sendMassage(chatId, str2);
+
+        SendMessage sendMessage = new SendMessage();
+        sendMessage.setChatId(String.valueOf(chatId));
+        sendMessage.setText(str3);
+
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+        KeyboardRow row = new KeyboardRow();
+        row.add("На початок");
+        keyboardRows.add(row);
+        keyboardMarkup.setKeyboard(keyboardRows);
+        sendMessage.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(sendMessage);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred" + e.getMessage());
+        }
+    }
+
+    private void beginCommandReceived(long chatId, String name) {
+        String startMessage = name + ", доброго дня! Вітаємо вас у нашому магазині крафтових смаколиків.";
+
+        basketMap.put(chatId, new ArrayList<>());
+
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(startMessage);
+
+        ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
+        keyboardMarkup.setResizeKeyboard(true);
+        List<KeyboardRow> keyboardRows = new ArrayList<>();
+        KeyboardRow row = new KeyboardRow();
+        row.add("Магазин");
+        row.add("Доставка та оплата");
+        row.add("Зв'язатись.");
+        keyboardRows.add(row);
+        row = new KeyboardRow();
+        row.add("Кошик");
+        keyboardRows.add(row);
+        keyboardMarkup.setKeyboard(keyboardRows);
+        message.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error occurred" + e.getMessage());
+        }
+    }
 
     /*----------------------------MANAGER COMMAND----------------------------*/
 
